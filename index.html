@@ -227,6 +227,22 @@ function showBanner(text){
   else { b.classList.remove('show'); }
 }
 
+function normalizeState(data){
+  const base = structuredClone(DEFAULT_STATE);
+  if(!data) return base;
+  return {
+    teamA: {
+      name: (data.teamA && data.teamA.name) || base.teamA.name,
+      players: (data.teamA && Array.isArray(data.teamA.players)) ? data.teamA.players : []
+    },
+    teamB: {
+      name: (data.teamB && data.teamB.name) || base.teamB.name,
+      players: (data.teamB && Array.isArray(data.teamB.players)) ? data.teamB.players : []
+    },
+    waitlist: Array.isArray(data.waitlist) ? data.waitlist : []
+  };
+}
+
 async function fetchWithTimeout(url, options, timeoutMs){
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs || 8000);
@@ -249,7 +265,7 @@ async function loadState(){
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     showBanner(null);
-    return data ? data : structuredClone(DEFAULT_STATE);
+    return normalizeState(data);
   }catch(e){
     const reason = (e && e.name === 'AbortError') ? 'timed out' : (e && e.message ? e.message : 'connection issue');
     showBanner("Couldn't reach the live board (" + reason + "). Showing your last known data — check your connection and try again.");
