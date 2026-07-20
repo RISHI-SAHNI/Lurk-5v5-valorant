@@ -62,8 +62,9 @@ body{background:var(--bg); color:var(--text); font-family:var(--font-body); min-
 .msg.err{color:var(--red);}
 .msg.warn{color:var(--amber);}
 
-.teams{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px;}
-@media(max-width:720px){.teams{grid-template-columns:1fr;}}
+.teams{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:28px;}
+@media(max-width:1000px){.teams{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){.teams{grid-template-columns:1fr;}}
 .team-panel{background:var(--panel); border:1px solid var(--border); padding:0;}
 .team-head{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--border); gap:10px;}
 .team-name-wrap{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
@@ -88,6 +89,23 @@ body{background:var(--bg); color:var(--text); font-family:var(--font-body); min-
 .role-tag{font-family:var(--font-mono); font-size:10px; letter-spacing:0.5px; text-transform:uppercase; padding:3px 7px; border:1px solid var(--amber); color:var(--amber); flex-shrink:0;}
 .slot-remove{background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px; padding:2px 6px; font-family:var(--font-mono); flex-shrink:0;}
 .slot-remove:hover{color:var(--red);}
+.move-select{background:var(--panel); border:1px solid var(--gold); color:var(--gold); font-family:var(--font-mono); font-size:10px; padding:4px 6px; flex-shrink:0; cursor:pointer;}
+
+.admin-badge{display:none; font-family:var(--font-mono); font-size:12px; color:var(--gold); border:1px solid var(--gold); padding:10px 14px; margin-bottom:18px; align-items:center; justify-content:space-between; gap:10px;}
+.admin-badge.show{display:flex;}
+.admin-badge button{font-family:var(--font-mono); font-size:11px; background:none; border:1px solid var(--gold); color:var(--gold); padding:5px 10px; cursor:pointer; text-transform:uppercase;}
+
+.admin-link{cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
+.admin-link:hover{color:var(--text);}
+
+.admin-overlay{position:fixed; inset:0; background:rgba(6,7,9,0.88); display:none; align-items:center; justify-content:center; padding:20px; z-index:60;}
+.admin-overlay.show{display:flex;}
+.admin-card{background:var(--panel); border:1px solid var(--gold); clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px); padding:28px; max-width:340px; width:100%;}
+.admin-card h3{font-family:var(--font-display); font-size:16px; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; color:var(--gold);}
+.admin-card input{width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text); padding:10px 12px; font-family:var(--font-body); font-size:14px; outline:none; margin-bottom:12px;}
+.admin-card input:focus{border-color:var(--gold);}
+.admin-card-actions{display:flex; gap:10px;}
+.admin-err{font-family:var(--font-mono); font-size:11px; color:var(--red); margin-top:-6px; margin-bottom:10px; min-height:14px;}
 
 .waitlist{background:var(--panel); border:1px solid var(--border); padding:16px; margin-bottom:24px;}
 .waitlist h3{font-family:var(--font-display); font-size:14px; letter-spacing:1px; text-transform:uppercase; color:var(--amber); margin-bottom:10px;}
@@ -127,9 +145,14 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
       </div>
     </div>
     <div class="hero-stat">
-      <div class="num" id="totalCount">0/10</div>
+      <div class="num" id="totalCount">0/15</div>
       <div class="lbl">Players Locked</div>
     </div>
+  </div>
+
+  <div class="admin-badge" id="adminBadge">
+    <span>🔓 ADMIN MODE — you can move or remove players</span>
+    <button id="adminExit">Exit</button>
   </div>
 
   <div class="banner" id="storageBanner">Setup needed — paste your Firebase Database URL into FIREBASE_DB_URL near the top of the script.</div>
@@ -154,6 +177,7 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
         <select id="f-team">
           <option value="teamA">Team A</option>
           <option value="teamB">Team B</option>
+          <option value="teamC">Team C</option>
           <option value="waitlist">Not sure — put me on the list</option>
         </select>
       </div>
@@ -178,9 +202,21 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
 
   <footer>
     <div class="foot-note">Registrations update live for everyone on this link.</div>
-    <div class="foot-note">Team names auto-update in the dropdown above once renamed.</div>
+    <div class="foot-note"><span class="admin-link" id="adminToggle">Admin</span></div>
   </footer>
 
+</div>
+
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-card">
+    <h3>Admin Access</h3>
+    <input type="password" id="adminPassInput" placeholder="Passcode">
+    <div class="admin-err" id="adminErr"></div>
+    <div class="admin-card-actions">
+      <button class="btn btn-primary" id="adminSubmit" style="flex:1;">Unlock</button>
+      <button class="btn btn-ghost" id="adminCancel" style="flex:1;">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <div class="success-overlay" id="successOverlay">
@@ -211,8 +247,16 @@ const EVENT_DATE = new Date('2026-07-24T00:00:00');
 const DEFAULT_STATE = {
   teamA: { name: 'TEAM ALPHA', players: [] },
   teamB: { name: 'TEAM BRAVO', players: [] },
+  teamC: { name: 'TEAM CHARLIE', players: [] },
   waitlist: []
 };
+const TEAM_KEYS = ['teamA','teamB','teamC'];
+
+// Change this before sharing the link — this only gates the UI (keeps casual
+// visitors from touching remove/move), it is not real security since the
+// database itself still allows public read/write.
+const ADMIN_PASSCODE = "SET_YOUR_PASSCODE_HERE";
+let isAdmin = localStorage.getItem('lurk-admin') === 'true';
 
 const CONFIGURED = FIREBASE_DB_URL && !FIREBASE_DB_URL.includes('PASTE_YOUR');
 
@@ -238,6 +282,10 @@ function normalizeState(data){
     teamB: {
       name: (data.teamB && data.teamB.name) || base.teamB.name,
       players: (data.teamB && Array.isArray(data.teamB.players)) ? data.teamB.players : []
+    },
+    teamC: {
+      name: (data.teamC && data.teamC.name) || base.teamC.name,
+      players: (data.teamC && Array.isArray(data.teamC.players)) ? data.teamC.players : []
     },
     waitlist: Array.isArray(data.waitlist) ? data.waitlist : []
   };
@@ -319,6 +367,15 @@ function renderTeamPanel(key, team){
   for(let i=0; i<5; i++){
     const p = team.players[i];
     if(p){
+      const moveOptions = TEAM_KEYS.filter(k => k !== key)
+        .map(k => `<option value="${k}">${escapeHtml(state[k].name)}</option>`).join('');
+      const adminControls = isAdmin ? `
+            <select class="move-select" data-move="${key}:${p.id}">
+              <option value="">Move…</option>
+              ${moveOptions}
+              <option value="waitlist">Waitlist</option>
+            </select>
+            <button class="slot-remove" data-remove="${key}:${p.id}" title="Remove">✕</button>` : '';
       slotsHtml += `
         <div class="slot ${p.isCaptain ? 'captain' : ''}">
           <div class="slot-info">
@@ -327,7 +384,7 @@ function renderTeamPanel(key, team){
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="role-tag">${escapeHtml(p.role)}</span>
-            <button class="slot-remove" data-remove="${key}:${p.id}" title="Remove">✕</button>
+            ${adminControls}
           </div>
         </div>`;
     } else {
@@ -353,8 +410,8 @@ function renderWaitlist(){
     wrap.innerHTML = `<div class="wl-empty">No one waiting — every registrant has a slot.</div>`;
     return;
   }
-  const aOpen = state.teamA.players.length < 5;
-  const bOpen = state.teamB.players.length < 5;
+  const openMap = {};
+  TEAM_KEYS.forEach(k => openMap[k] = state[k].players.length < 5);
   wrap.innerHTML = state.waitlist.map(p => `
     <div class="wl-row">
       <div class="slot-info">
@@ -362,27 +419,29 @@ function renderWaitlist(){
         <div class="slot-meta">${escapeHtml(p.ign)} · 📞 ${escapeHtml(p.phone)} · Discord: ${escapeHtml(p.discord)}</div>
       </div>
       <div class="wl-actions">
-        <button data-place="${p.id}:teamA" ${aOpen ? '' : 'disabled'}>→ ${escapeHtml(state.teamA.name)}</button>
-        <button data-place="${p.id}:teamB" ${bOpen ? '' : 'disabled'}>→ ${escapeHtml(state.teamB.name)}</button>
+        ${TEAM_KEYS.map(k => `<button data-place="${p.id}:${k}" ${openMap[k] ? '' : 'disabled'}>→ ${escapeHtml(state[k].name)}</button>`).join('')}
       </div>
     </div>`).join('');
 }
 
 function updateTeamSelectOptions(){
   const sel = document.getElementById('f-team');
-  const optA = sel.querySelector('option[value="teamA"]');
-  const optB = sel.querySelector('option[value="teamB"]');
-  if(optA) optA.textContent = state.teamA.name;
-  if(optB) optB.textContent = state.teamB.name;
+  TEAM_KEYS.forEach(k => {
+    const opt = sel.querySelector(`option[value="${k}"]`);
+    if(opt) opt.textContent = state[k].name;
+  });
 }
 
 function render(){
-  document.getElementById('teamsWrap').innerHTML = renderTeamPanel('teamA', state.teamA) + renderTeamPanel('teamB', state.teamB);
+  document.getElementById('teamsWrap').innerHTML = TEAM_KEYS.map(k => renderTeamPanel(k, state[k])).join('');
   renderWaitlist();
   updateTeamSelectOptions();
-  const total = state.teamA.players.length + state.teamB.players.length;
-  document.getElementById('totalCount').textContent = `${total}/10`;
+  const total = TEAM_KEYS.reduce((sum,k) => sum + state[k].players.length, 0);
+  document.getElementById('totalCount').textContent = `${total}/15`;
   document.getElementById('countdown').textContent = countdownText();
+  const badge = document.getElementById('adminBadge');
+  badge.classList.toggle('show', isAdmin);
+  document.getElementById('adminToggle').textContent = isAdmin ? 'Exit admin' : 'Admin';
   attachDynamicListeners();
 }
 
@@ -391,6 +450,26 @@ function attachDynamicListeners(){
     btn.onclick = async () => {
       const [key, id] = btn.dataset.remove.split(':');
       state[key].players = state[key].players.filter(p => p.id !== id);
+      render();
+      await saveState(state);
+    };
+  });
+
+  document.querySelectorAll('[data-move]').forEach(sel => {
+    sel.onchange = async () => {
+      const destKey = sel.value;
+      if(!destKey) return;
+      const [srcKey, id] = sel.dataset.move.split(':');
+      const idx = state[srcKey].players.findIndex(p => p.id === id);
+      if(idx === -1) return;
+      if(destKey !== 'waitlist' && state[destKey].players.length >= 5){
+        showMsg('That team is already full.', 'err');
+        render();
+        return;
+      }
+      const [player] = state[srcKey].players.splice(idx, 1);
+      if(destKey === 'waitlist'){ state.waitlist.push(player); }
+      else { state[destKey].players.push(player); }
       render();
       await saveState(state);
     };
@@ -507,7 +586,7 @@ document.getElementById('successClose').onclick = () => {
 
 document.getElementById('copyBtn').onclick = () => {
   const lines = [`LURK 5v5 — ROSTER (${new Date().toLocaleDateString()})`, ''];
-  ['teamA','teamB'].forEach(key => {
+  TEAM_KEYS.forEach(key => {
     const t = state[key];
     lines.push(`${t.name} (${t.players.length}/5)`);
     t.players.forEach(p => lines.push(`  - ${p.isCaptain ? '[C] ' : ''}${p.name} | ${p.ign} | ${p.role} | ${p.phone} | ${p.discord}`));
@@ -521,6 +600,41 @@ document.getElementById('copyBtn').onclick = () => {
   if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(()=>showMsg('Roster copied.', '')).catch(()=>showMsg('Could not copy — select and copy manually.', 'err'));
   }
+};
+
+document.getElementById('adminToggle').onclick = () => {
+  if(isAdmin){
+    isAdmin = false;
+    localStorage.removeItem('lurk-admin');
+    render();
+  } else {
+    document.getElementById('adminPassInput').value = '';
+    document.getElementById('adminErr').textContent = '';
+    document.getElementById('adminOverlay').classList.add('show');
+    document.getElementById('adminPassInput').focus();
+  }
+};
+document.getElementById('adminCancel').onclick = () => {
+  document.getElementById('adminOverlay').classList.remove('show');
+};
+document.getElementById('adminSubmit').onclick = () => {
+  const val = document.getElementById('adminPassInput').value;
+  if(val && val === ADMIN_PASSCODE){
+    isAdmin = true;
+    localStorage.setItem('lurk-admin', 'true');
+    document.getElementById('adminOverlay').classList.remove('show');
+    render();
+  } else {
+    document.getElementById('adminErr').textContent = 'Wrong passcode.';
+  }
+};
+document.getElementById('adminPassInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('adminSubmit').click();
+});
+document.getElementById('adminExit').onclick = () => {
+  isAdmin = false;
+  localStorage.removeItem('lurk-admin');
+  render();
 };
 
 function init(){
