@@ -151,8 +151,11 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
   </div>
 
   <div class="admin-badge" id="adminBadge">
-    <span>🔓 ADMIN MODE — you can move or remove players</span>
-    <button id="adminExit">Exit</button>
+    <span>🔓 ADMIN MODE — you can move, remove, rename, or add teams</span>
+    <div style="display:flex; gap:8px;">
+      <button id="addTeamBtn">+ Add Team</button>
+      <button id="adminExit">Exit</button>
+    </div>
   </div>
 
   <div class="banner" id="storageBanner">Setup needed — paste your Firebase Database URL into FIREBASE_DB_URL near the top of the script.</div>
@@ -174,12 +177,7 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
         </select>
       </div>
       <div class="field"><label>Team</label>
-        <select id="f-team">
-          <option value="teamA">Team A</option>
-          <option value="teamB">Team B</option>
-          <option value="teamC">Team C</option>
-          <option value="waitlist">Not sure — put me on the list</option>
-        </select>
+        <select id="f-team"></select>
       </div>
     </div>
     <div class="captain-row">
@@ -432,7 +430,28 @@ function updateTeamSelectOptions(){
   });
 }
 
+
+
+function updateTeamDropdown(){
+  const select = document.getElementById("f-team");
+  if(!select) return;
+  select.innerHTML = "";
+
+  Object.entries(state.teams).forEach(([id, team]) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = team.name;
+    select.appendChild(option);
+  });
+
+  const wait = document.createElement("option");
+  wait.value = "waitlist";
+  wait.textContent = "Not sure — put me on the list";
+  select.appendChild(wait);
+}
+
 function render(){
+  updateTeamDropdown();
   document.getElementById('teamsWrap').innerHTML = TEAM_KEYS.map(k => renderTeamPanel(k, state[k])).join('');
   renderWaitlist();
   updateTeamSelectOptions();
