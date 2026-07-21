@@ -151,8 +151,11 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
   </div>
 
   <div class="admin-badge" id="adminBadge">
-    <span>🔓 ADMIN MODE — you can move or remove players</span>
-    <button id="adminExit">Exit</button>
+    <span>🔓 ADMIN MODE — you can move or remove players, and add teams</span>
+    <div style="display:flex; gap:8px;">
+      <button id="addTeamBtn">+ Add Team</button>
+      <button id="adminExit">Exit</button>
+    </div>
   </div>
 
   <div class="banner" id="storageBanner">Setup needed — paste your Firebase Database URL into FIREBASE_DB_URL near the top of the script.</div>
@@ -219,6 +222,18 @@ footer{display:flex; justify-content:space-between; align-items:center; flex-wra
   </div>
 </div>
 
+<div class="admin-overlay" id="addTeamOverlay">
+  <div class="admin-card">
+    <h3>Add New Team</h3>
+    <input type="text" id="addTeamInput" placeholder="Team name" maxlength="24">
+    <div class="admin-err" id="addTeamErr"></div>
+    <div class="admin-card-actions">
+      <button class="btn btn-primary" id="addTeamSubmit" style="flex:1;">Add Team</button>
+      <button class="btn btn-ghost" id="addTeamCancel" style="flex:1;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
     <img class="success-logo" src="data:image/jpeg;base64,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" alt="LURK">
@@ -248,14 +263,14 @@ const DEFAULT_STATE = {
   teamA: { name: 'TEAM ALPHA', players: [] },
   teamB: { name: 'TEAM BRAVO', players: [] },
   teamC: { name: 'TEAM CHARLIE', players: [] },
-  waitlist: []
+  waitlist: [],
+  teamOrder: ['teamA','teamB','teamC']
 };
-const TEAM_KEYS = ['teamA','teamB','teamC'];
 
 // Change this before sharing the link — this only gates the UI (keeps casual
-// visitors from touching remove/move), it is not real security since the
-// database itself still allows public read/write.
-const ADMIN_PASSCODE = "SET_YOUR_PASSCODE_HERE";
+// visitors from touching remove/move/add-team), it is not real security since
+// the database itself still allows public read/write.
+const ADMIN_PASSCODE = "123youarefree";
 let isAdmin = localStorage.getItem('lurk-admin') === 'true';
 
 const CONFIGURED = FIREBASE_DB_URL && !FIREBASE_DB_URL.includes('PASTE_YOUR');
@@ -274,21 +289,21 @@ function showBanner(text){
 function normalizeState(data){
   const base = structuredClone(DEFAULT_STATE);
   if(!data) return base;
-  return {
-    teamA: {
-      name: (data.teamA && data.teamA.name) || base.teamA.name,
-      players: (data.teamA && Array.isArray(data.teamA.players)) ? data.teamA.players : []
-    },
-    teamB: {
-      name: (data.teamB && data.teamB.name) || base.teamB.name,
-      players: (data.teamB && Array.isArray(data.teamB.players)) ? data.teamB.players : []
-    },
-    teamC: {
-      name: (data.teamC && data.teamC.name) || base.teamC.name,
-      players: (data.teamC && Array.isArray(data.teamC.players)) ? data.teamC.players : []
-    },
-    waitlist: Array.isArray(data.waitlist) ? data.waitlist : []
+  const order = (Array.isArray(data.teamOrder) && data.teamOrder.length)
+    ? data.teamOrder.filter(k => typeof k === 'string')
+    : base.teamOrder;
+  const result = {
+    waitlist: Array.isArray(data.waitlist) ? data.waitlist : [],
+    teamOrder: order
   };
+  order.forEach(key => {
+    const d = data[key];
+    result[key] = {
+      name: (d && d.name) || (base[key] && base[key].name) || key.toUpperCase(),
+      players: (d && Array.isArray(d.players)) ? d.players : []
+    };
+  });
+  return result;
 }
 
 async function fetchWithTimeout(url, options, timeoutMs){
@@ -367,7 +382,7 @@ function renderTeamPanel(key, team){
   for(let i=0; i<5; i++){
     const p = team.players[i];
     if(p){
-      const moveOptions = TEAM_KEYS.filter(k => k !== key)
+      const moveOptions = state.teamOrder.filter(k => k !== key)
         .map(k => `<option value="${k}">${escapeHtml(state[k].name)}</option>`).join('');
       const adminControls = isAdmin ? `
             <select class="move-select" data-move="${key}:${p.id}">
@@ -411,7 +426,7 @@ function renderWaitlist(){
     return;
   }
   const openMap = {};
-  TEAM_KEYS.forEach(k => openMap[k] = state[k].players.length < 5);
+  state.teamOrder.forEach(k => openMap[k] = state[k].players.length < 5);
   wrap.innerHTML = state.waitlist.map(p => `
     <div class="wl-row">
       <div class="slot-info">
@@ -419,24 +434,26 @@ function renderWaitlist(){
         <div class="slot-meta">${escapeHtml(p.ign)} · 📞 ${escapeHtml(p.phone)} · Discord: ${escapeHtml(p.discord)}</div>
       </div>
       <div class="wl-actions">
-        ${TEAM_KEYS.map(k => `<button data-place="${p.id}:${k}" ${openMap[k] ? '' : 'disabled'}>→ ${escapeHtml(state[k].name)}</button>`).join('')}
+        ${state.teamOrder.map(k => `<button data-place="${p.id}:${k}" ${openMap[k] ? '' : 'disabled'}>→ ${escapeHtml(state[k].name)}</button>`).join('')}
       </div>
     </div>`).join('');
 }
 
 function updateTeamSelectOptions(){
   const sel = document.getElementById('f-team');
-  TEAM_KEYS.forEach(k => {
-    const opt = sel.querySelector(`option[value="${k}"]`);
-    if(opt) opt.textContent = state[k].name;
-  });
+  const prevValue = sel.value;
+  const teamOptions = state.teamOrder.map(k => `<option value="${k}">${escapeHtml(state[k].name)}</option>`).join('');
+  sel.innerHTML = teamOptions + `<option value="waitlist">Not sure — put me on the list</option>`;
+  if(state.teamOrder.includes(prevValue) || prevValue === 'waitlist'){
+    sel.value = prevValue;
+  }
 }
 
 function render(){
-  document.getElementById('teamsWrap').innerHTML = TEAM_KEYS.map(k => renderTeamPanel(k, state[k])).join('');
+  document.getElementById('teamsWrap').innerHTML = state.teamOrder.map(k => renderTeamPanel(k, state[k])).join('');
   renderWaitlist();
   updateTeamSelectOptions();
-  const total = TEAM_KEYS.reduce((sum,k) => sum + state[k].players.length, 0);
+  const total = state.teamOrder.reduce((sum,k) => sum + state[k].players.length, 0);
   document.getElementById('totalCount').textContent = `${total}/15`;
   document.getElementById('countdown').textContent = countdownText();
   const badge = document.getElementById('adminBadge');
@@ -586,7 +603,7 @@ document.getElementById('successClose').onclick = () => {
 
 document.getElementById('copyBtn').onclick = () => {
   const lines = [`LURK 5v5 — ROSTER (${new Date().toLocaleDateString()})`, ''];
-  TEAM_KEYS.forEach(key => {
+  state.teamOrder.forEach(key => {
     const t = state[key];
     lines.push(`${t.name} (${t.players.length}/5)`);
     t.players.forEach(p => lines.push(`  - ${p.isCaptain ? '[C] ' : ''}${p.name} | ${p.ign} | ${p.role} | ${p.phone} | ${p.discord}`));
@@ -636,6 +653,34 @@ document.getElementById('adminExit').onclick = () => {
   localStorage.removeItem('lurk-admin');
   render();
 };
+
+document.getElementById('addTeamBtn').onclick = () => {
+  if(!isAdmin) return;
+  document.getElementById('addTeamInput').value = '';
+  document.getElementById('addTeamErr').textContent = '';
+  document.getElementById('addTeamOverlay').classList.add('show');
+  document.getElementById('addTeamInput').focus();
+};
+document.getElementById('addTeamCancel').onclick = () => {
+  document.getElementById('addTeamOverlay').classList.remove('show');
+};
+document.getElementById('addTeamSubmit').onclick = async () => {
+  if(!isAdmin) return;
+  const val = document.getElementById('addTeamInput').value.trim();
+  if(!val){
+    document.getElementById('addTeamErr').textContent = 'Enter a team name.';
+    return;
+  }
+  const key = 'team_' + uid();
+  state.teamOrder.push(key);
+  state[key] = { name: val.toUpperCase(), players: [] };
+  document.getElementById('addTeamOverlay').classList.remove('show');
+  render();
+  await saveState(state);
+};
+document.getElementById('addTeamInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('addTeamSubmit').click();
+});
 
 function init(){
   // Render right away with local defaults so the page is usable immediately,
